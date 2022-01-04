@@ -6,9 +6,9 @@ node {
      * 将这个镜像的3306端口映射到主机了，这样就可以为jenkins提供测试环境了，而无需在本地安装mysql了
      */
   docker.image('mysql:5').withRun('-e "MYSQL_ROOT_PASSWORD=my-secret-pw" -p 3306:3306') { c ->
-    /* Wait until mysql service is up 等到mysql服务启动*/
-    sh 'echo "mysql安装完成"'
-    /* Run some tests which require MySQL 运行一些需要 MySQL 的测试*/
-    sh 'echo "接下来做一些针对mysql的测试"'
+    /* Wait until mysql service is up */
+    sh 'while ! mysqladmin ping -h0.0.0.0 --silent; do sleep 1; done'
+    /* Run some tests which require MySQL */
+    sh 'make check'
   }
 }

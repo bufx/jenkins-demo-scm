@@ -1,0 +1,26 @@
+node {
+  checkout scm
+  //最外面跑的容器是提供本次构建的测试环境的
+  docker.image('mysql:5').withRun('-e "MYSQL_ROOT_PASSWORD=my-secret-pw"') { c ->
+    //这个容器是在内部执行了一个命令
+    //inside表示在容器内部运行命令
+    // link 表示创建链接
+    // c.id 是容器的ID，通过方法withRun的返回值c获取的
+    docker.image('mysql:5').inside("--link ${c.id}:db") {
+      /* Wait until mysql service is up */
+      sh 'while ! mysqladmin ping -hdb --silent; do sleep 1; done'
+      //在退出 pipeline之前可以通过ID查看docker容器日志
+      sh "docker logs ${c.id}"
+    }
+    //这个容器在内部执行了一个需要mysql服务的命令
+    docker.image('centos:7').inside("--link ${c.id}:db") {
+      /*
+       * Run some tests which require MySQL, and assume that it is
+       * available on the host name `db`
+       */
+      sh 'make check'
+      //在退出 pipeline之前可以通过ID查看docker容器日志
+      sh "docker logs ${c.id}"
+    }
+  }
+}
